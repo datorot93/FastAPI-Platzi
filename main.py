@@ -1,7 +1,9 @@
 # Python
+import json
+from unittest import result
 from uuid import UUID
 from datetime import date, datetime
-from typing import Optional
+from typing import Optional, List
 
 # Pydantic
 from pydantic import BaseModel
@@ -9,14 +11,15 @@ from pydantic import EmailStr
 from pydantic import Field
 
 # FastAPI
-from fastapi import FastAPI
+from fastapi import Body, FastAPI
+from fastapi import status
 
 app = FastAPI()
 
 # Models
 
 class UserBase(BaseModel):
-    user_ud: UUID = Field(...) #Universal Unid Identifier
+    user_id: UUID = Field(...) #Universal Unid Identifier
     email: EmailStr = Field(...)
 
 
@@ -26,7 +29,6 @@ class UserLogin(UserBase):
         min_length=8,
         max_length=64
     )
-
 
 class User(UserBase):
     
@@ -42,6 +44,13 @@ class User(UserBase):
     )
     birth_date: Optional[date] = Field(default=None)
 
+class UserRegister(User):
+
+    password: str = Field(
+        ...,
+        min_length=8,
+        max_length=64
+    )
 
 class Tweet(BaseModel):
     tweet_id: UUID = Field(...)
@@ -58,7 +67,176 @@ class Tweet(BaseModel):
     )
     by: User = Field(...)
 
+# Path Operations
 
-@app.get(path="/")
+## Users
+
+@app.post(
+    path="/signup",
+    response_model=User,
+    status_code=status.HTTP_201_CREATED,
+    summary="Register a User",
+    tags=["Users"]
+)
+def signup(user: UserRegister = Body(...)):
+    """
+    SignUp a User
+
+    This path operation register a user in the app 
+
+    Parameters:
+        - Request body parameter
+            - user: UserRegister
+
+    Returns a json with the basic user information
+        - user_id: UUID
+        - email: EmailStr
+        - last_name: str
+        - birth_date: date
+    """
+
+    with open("users.json", "r+", encoding="utf-8") as f:
+        results = json.loads(f.read()) # carga el json y lo convierte a un diccionario   
+        user_dict = user.dict()
+        user_dict['user_id'] = str(user_dict['user_id'])
+        user_dict['birth_date'] = str(user_dict['birth_date'])
+        results.append(user_dict)
+        f.seek(0)
+        f.write(json.dumps(results))
+
+        return user
+
+# Login a user
+@app.post(
+    path="/login",
+    response_model=User,
+    status_code=status.HTTP_200_OK,
+    summary="Login a User",
+    tags=["Users"]
+)
+def login():
+    pass
+
+# Show all users
+@app.get(
+    path="/users",
+    response_model=List[User],
+    status_code=status.HTTP_200_OK,
+    summary="Show all Users",
+    tags=["Users"]
+)
+def show_all_users():
+    """
+    SignUp a User
+
+    This path operation shows all the users in the app
+
+    Parameters:
+
+
+    Returns a json with the basic user information
+        - user_id: UUID
+        - email: EmailStr
+        - last_name: str
+        - birth_date: date
+    """
+    with open('users.json', 'r', encoding='utf-8') as f:
+        results = json.loads(f.read())
+        return results
+
+@app.post(
+    path="/users/{user_id}}",
+    response_model=User,
+    status_code=status.HTTP_200_OK,
+    summary="Show a User",
+    tags=["Users"]
+)
+def show_a_user():
+    pass
+
+@app.delete(
+    path="/users/{user_id}/delete",
+    response_model=User,
+    status_code=status.HTTP_200_OK,
+    summary="Delete a User",
+    tags=["Users"]
+)
+def delete():
+    pass
+
+@app.put(
+    path="/users/{user_id}/update",
+    response_model=User,
+    status_code=status.HTTP_200_OK,
+    summary="Updated a User",
+    tags=["Users"]
+)
+def update():
+    pass
+
+## Tweets
+
+@app.get(
+    path="/",
+    response_model=List[Tweet],
+    status_code=status.HTTP_200_OK,
+    summary="Show all tweets",
+    tags=["Tweets"]
+)
 def home():
     return {"Twitter API": "Working!"}
+
+# Post a tweet
+@app.post(
+    path="/post",
+    response_model=Tweet,
+    status_code=status.HTTP_201_CREATED,
+    summary="Post a tweet",
+    tags=["Tweets"]
+)
+def post():
+    """  """
+    with open("users.json", "r+", encoding="utf-8") as f:
+        results = json.loads(f.read()) # carga el json y lo convierte a un diccionario   
+        user_dict = user.dict()
+        user_dict['user_id'] = str(user_dict['user_id'])
+        user_dict['birth_date'] = str(user_dict['birth_date'])
+        results.append(user_dict)
+        f.seek(0)
+        f.write(json.dumps(results))
+
+        return user
+
+# Show a tweet
+@app.get(
+    path="/tweet/{tweet_id}",
+    response_model=Tweet,
+    status_code=status.HTTP_200_OK,
+    summary="Show a tweet",
+    tags=["Tweets"]
+)
+def show_a_tweet():
+    pass
+
+# Delete a Tweet
+@app.delete(
+    path="/tweet/{tweet_id}/delete",
+    response_model=Tweet,
+    status_code=status.HTTP_200_OK,
+    summary="Delete a tweet",
+    tags=["Tweets"]
+)
+def delete_a_tweet():
+    pass
+
+# Update a Tweet
+@app.put(
+    path="/tweet/{tweet_id}/update",
+    response_model=Tweet,
+    status_code=status.HTTP_200_OK,
+    summary="Update a tweet",
+    tags=["Tweets"]
+)
+def update_a_tweet():
+    pass
+
